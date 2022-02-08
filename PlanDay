@@ -1,0 +1,113 @@
+function OutagePlanDay() {
+  var BookID = "1Wzs0IHZPdVpcAerKHQrhLfDNXTETZWkXzFHDjzW80UM";
+  var Book = SpreadsheetApp.openById(BookID);
+  var Sheet = Book.getSheetByName("OPlan");
+  var startRow = 2;
+  var numRows = Sheet.getDataRange().getLastRow();
+  var lastCols = Sheet.getDataRange().getLastColumn();
+  var dataRange = Sheet.getRange(startRow,1,numRows-1,lastCols);
+  var data = dataRange.getValues();
+  var today = new Date();
+  var dateToday = new Date(today.getFullYear(),today.getMonth(),today.getDate(),today.getHours(),today.getMinutes());
+  var message = "";
+  var datamessage = "";
+  var countWork = 0;
+
+  for(var q = 0;q < data.length;++q)
+  {
+    var row = data[q];
+    var dOpen = new Date(row[3]);
+    var dataOpen = new Date(dOpen.getFullYear(), dOpen.getMonth(), dOpen.getDate(), dOpen.getHours(), dOpen.getMinutes());
+    var row = data[q];
+    var dClose = new Date(row[4]);
+    var dataClose = new Date(dClose.getFullYear(), dClose.getMonth(), dClose.getDate(), dClose.getHours(), dClose.getMinutes());
+
+    if(dateToday.toDateString() == dataOpen.toDateString() || dateToday.toDateString() == dataClose.toDateString())
+    {
+      if(dataOpen.toDateString() == dataClose.toDateString())
+      {
+        countWork++;
+        var openName = "ชื่อผู้ใช้ไฟ : " + row[1];
+        var openAdd = "สถานที่ : " + row[2];
+        var openCont = "ผู้ประสานงาน : " + row[5];
+        var openTel = "เบอร์โทร : " + row[6];
+        var openFile = "เอกสาร : " + row[7];
+
+        datamessage += "\n[" + countWork + "]\n" 
+        + openName + "\n" + openAdd + "\n" 
+        + "เวลาปลดไฟ :" + Utilities.formatDate(dataOpen,"GMT+7", "HH:mm") + " น." + "\n" 
+        + "เวลาต่อไฟ :" + Utilities.formatDate(dataClose,"GMT+7", "HH:mm") + " น." + "\n"
+        + openCont + "\n" + openTel + "\n" + openFile + "\n------------------";
+      }
+      else if(dateToday.toDateString() == dataClose.toDateString())
+      {
+        countWork++;
+        var closeName = "ชื่อบริษัท : " + row[1];
+        var closeAdd = "สถานที่ : " + row[2];
+        var closeCont = "ผู้ประสานงาน : " + row[5];
+        var closeTel = "เบอร์โทร : " + row[6];
+        var closeFile = "เอกสาร : " + row[7];
+
+        datamessage += "\n[" + countWork + "]\n" 
+        + closeName + "\n" + closeAdd + "\n" 
+        + "เวลาต่อไฟ :" + Utilities.formatDate(dataClose,"GMT+7", "HH:mm") + " น." + "\n" 
+        + closeCont + "\n" + closeTel + "\n" + closeFile + "\n------------------";
+      }
+      else
+      {
+        countWork++;
+        var openName = "ชื่อผู้ใช้ไฟ : " + row[1];
+        var openAdd = "สถานที่ : " + row[2];
+        var openCont = "ผู้ประสานงาน : " + row[5];
+        var openTel = "เบอร์โทร : " + row[6];
+        var openFile = "เอกสาร : " + row[7];
+
+        datamessage += "\n[" + countWork + "]\n" 
+        + openName + "\n" + openAdd + "\n" 
+        + "เวลาปลดไฟ :" + Utilities.formatDate(dataOpen,"GMT+7", "HH:mm") + " น." + "\n" 
+        + openCont + "\n" + openTel + "\n" + openFile + "\n------------------";
+      }
+    }
+  }
+
+  if(countWork != 0)
+  {
+  message += Utilities.formatDate(dateToday,"GMT+7", "dd MMM yyyy") + datamessage;
+  }
+
+  if (message === "") {
+    return;
+  }
+
+  Logger.log(message);
+  sendMessagePlanDay(message);
+
+}
+
+function sendMessagePlanDay(message) {
+  var lineNotifyEndPoint = "https://notify-api.line.me/api/notify";
+  //var accessToken = "jl2b6gkY5PSt10TZJFFOTXVhQ8p2bEsAmOvGhPENEyw"; //ส่วนตัว
+  var accessToken = "FMxoe9SWaS8gJCyf78RiEqNQUgpAHjlAnc0Aa0dSK7C"; //กลุ่มทดลอง
+  
+  var formData = {
+    "message": message
+  };
+  
+  var options = {
+    "headers" : {"Authorization" : "Bearer " + accessToken},
+    "method" : 'post',
+    "payload" : formData
+  };
+
+  try {
+    var response = UrlFetchApp.fetch(lineNotifyEndPoint, options);
+  }
+  catch (error) {
+    Logger.log(error.name + "：" + error.message);
+    return;
+  }
+    
+  if (response.getResponseCode() !== 200) {
+    Logger.log("Sending message failed.");
+  } 
+}
